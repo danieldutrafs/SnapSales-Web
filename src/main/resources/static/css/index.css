@@ -1,0 +1,138 @@
+body {
+    display: flex;
+    min-height: 100vh;
+    background-color: #eef1f5;
+    color: #1f2937;
+}
+
+.conteudo {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.conteudo header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.conteudo header h2 {
+    font-size: 38px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.btn-novo {
+    background-color: #3b82f6;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+    transition: all 0.2s ease;
+}
+
+.btn-novo:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.card-resumo {
+    background: #ffffff;
+    border: 2px solid #3b82f6;
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+}
+
+.card-resumo.azul { border-color: #3b82f6; }
+.card-resumo.amarelo { border-color: #eab308; }
+.card-resumo.verde { border-color: #22c55e; }
+.card-resumo.vermelho { border-color: #ef4444; }
+
+.card-resumo h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.card-resumo p {
+    font-size: 36px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.bloco {
+    background: #ffffff;
+    border: 2px solid #6b7280;
+    border-radius: 20px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.bloco h3 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.tabela-home {
+    border: 2px solid #6b7280;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.tabela-home table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.tabela-home th,
+.tabela-home td {
+    padding: 16px;
+    font-size: 18px;
+    border-bottom: 1px solid #9ca3af;
+}
+
+.tabela-home tr:last-child td {
+    border-bottom: none;
+}
+
+.tabela-home thead {
+    background-color: #e5e7eb;
+}
+
+.tabela-home tbody td {
+    color: #374151;
+    font-weight: 600;
+}
+
+.badge-status {
+    font-size: 15px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 10px;
+    color: #ffffff;
+    display: inline-block;
+}
+
+.badge-status.preparacao { background-color: #eab308; }
+.badge-status.pronto { background-color: #3b82f6; }
+.badge-status.entregue { background-color: #22c55e; }

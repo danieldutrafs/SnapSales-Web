@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSales - Produtos</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/produtos.css">
+</head>
+
+<body>
+    <aside class="menu-esquerdo">
+        <h1>SnapSales</h1>
+        <nav>
+            <div class="menu-indicador" id="menu-indicador"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="encomendas.html">Encomendas</a></li>
+                <li><a href="produtos.html" class="ativo">Produtos</a></li>
+                <li><a href="clientes.html">Clientes</a></li>
+                <li><a href="movimentacao.html">Movimentação</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="conteudo">
+        <header>
+            <h2>Produtos e Estoque</h2>
+            <button type="button" id="btn-novo-produto" class="btn-novo">+ Novo Produto</button>
+        </header>
+
+        <section class="info-produto">
+            <div class="produto-cards">
+                <div class="cards">
+                    <h2>Quantidade Total</h2>
+                    <p id="quantidade-total"></p>
+                </div>
+                <div class="cards">
+                    <h2>Valor Total</h2>
+                    <p id="valor-total"></p>
+                </div>
+                <div class="cards">
+                    <h2>Produto Ativos</h2>
+                    <p id="produtos-ativos"></p>
+                </div>
+            </div>
+
+            <div class="filtro-produto">
+                <input type="text" placeholder="Pesquisar Produto">
+                <div class="acoes-botoes">
+                    <button id="btn-editar">Editar</button>
+                    <button id="btn-pausar">Pausar</button>
+                    <button id="btn-excluir">Excluir</button>
+                </div>
+            </div>
+
+            <div class="tabela-produtos">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Quantidade</th>
+                            <th>Preço unitário</th>
+                            <th>Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-produtos-corpo">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Modal de Cadastro e Edição de Produto -->
+        <div id="fundo-modal-produto" class="fundo-modal oculto">
+            <div class="janela-modal">
+
+                <div class="cabecalho-modal">
+                    <h2 id="modal-titulo-produto">Novo Produto</h2>
+                    <button type="button" id="btn-fechar-modal-produto" class="btn-fechar">&times;</button>
+                </div>
+
+                <form id="formulario-produto">
+                    <input type="hidden" id="campo-id-produto" name="id">
+
+                    <div class="grupo-campo">
+                        <label for="campo-nome-produto">Nome do Produto</label>
+                        <input type="text" id="campo-nome-produto" placeholder="Ex: Coxinha de Frango" required>
+                    </div>
+
+                    <div class="grupo-campo">
+                        <label for="campo-categoria-produto">Categoria</label>
+                        <select id="campo-categoria-produto" required>
+                            <option value="">Selecione uma categoria...</option>
+                            <option value="__NOVA__">+ Adicionar Nova Categoria...</option>
+                        </select>
+                    </div>
+
+                    <div class="grupo-campo oculto" id="grupo-nova-categoria">
+                        <label for="campo-nova-categoria">Nome da Nova Categoria</label>
+                        <input type="text" id="campo-nova-categoria" placeholder="Ex: Bebidas">
+                    </div>
+
+                    <div class="linha-campos">
+                        <div class="grupo-campo">
+                            <label for="campo-preco-produto">Preço Unitário (R$)</label>
+                            <input type="number" id="campo-preco-produto" step="0.01" min="0" placeholder="0,00" required>
+                        </div>
+
+                        <div class="grupo-campo">
+                            <label for="campo-quantidade-produto">Quantidade em Estoque</label>
+                            <input type="number" id="campo-quantidade-produto" min="0" placeholder="0" required>
+                        </div>
+                    </div>
+
+                    <div class="rodape-modal">
+                        <button type="button" id="btn-cancelar-modal-produto" class="btn-secundario">Cancelar</button>
+                        <button type="submit" id="btn-salvar-modal-produto" class="btn-primario">Salvar</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </main>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/menu.js"></script>
+    <script src="js/produtos.js"></script>
+</body>
+
+</html>

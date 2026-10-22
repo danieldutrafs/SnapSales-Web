@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSales - Home</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/index.css">
+</head>
+
+<body>
+    <aside class="menu-esquerdo">
+        <h1>SnapSales</h1>
+        <nav>
+            <div class="menu-indicador" id="menu-indicador"></div>
+            <ul>
+                <li><a href="index.html" class="ativo">Home</a></li>
+                <li><a href="encomendas.html">Encomendas</a></li>
+                <li><a href="produtos.html">Produtos</a></li>
+                <li><a href="clientes.html">Clientes</a></li>
+                <li><a href="movimentacao.html">Movimentação</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="conteudo">
+        <header>
+            <h2>Home</h2>
+            <a class="btn-novo" href="encomendas.html">+ Nova Encomenda</a>
+        </header>
+
+        <section class="resumo">
+            <div class="card-resumo azul">
+                <h3>Em preparação</h3>
+                <p id="res-preparacao">0</p>
+            </div>
+            <div class="card-resumo amarelo">
+                <h3>Prontas p/ entrega</h3>
+                <p id="res-prontas">0</p>
+            </div>
+            <div class="card-resumo verde">
+                <h3>Entregas de hoje</h3>
+                <p id="res-hoje">0</p>
+            </div>
+            <div class="card-resumo vermelho">
+                <h3>Estoque baixo</h3>
+                <p id="res-estoque-baixo">0</p>
+            </div>
+        </section>
+
+        <section class="bloco">
+            <h3>Próximas entregas</h3>
+            <div class="tabela-home">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Entrega</th>
+                            <th>Status</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-proximas"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/menu.js"></script>
+    <script src="js/index.js"></script>
+</body>
+
+</html>

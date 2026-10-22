@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSales - Movimentações</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/movimentacao.css">
+</head>
+
+<body>
+    <!-- Menu Lateral Esquerdo -->
+    <aside class="menu-esquerdo">
+        <h1>SnapSales</h1>
+        <nav>
+            <div class="menu-indicador" id="menu-indicador"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="encomendas.html">Encomendas</a></li>
+                <li><a href="produtos.html">Produtos</a></li>
+                <li><a href="clientes.html">Clientes</a></li>
+                <li><a href="movimentacao.html" class="ativo">Movimentação</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <main class="conteudo">
+        <div class="coluna-principal">
+            <header>
+                <h2>Gestão de Movimentação</h2>
+                <div class="header-acoes">
+                    <input type="text" placeholder="Pesquisar" id="input-pesquisa">
+                    <button class="btn-novo" id="btn-novo-movi">+ Novo Movi</button>
+                </div>
+            </header>
+
+            <!-- Cards de Resumo -->
+            <section class="area-cards">
+                <div class="card card-entradas">
+                    <h2>Entradas</h2>
+                    <p id="entrada"></p>
+                </div>
+                <div class="card card-saidas">
+                    <h2>Saídas</h2>
+                    <p id="saida"></p>
+                </div>
+                <div class="card card-saldo">
+                    <h2>Saldo Atual</h2>
+                    <p id="saldo-atual"></p>
+                </div>
+            </section>
+
+            <!-- Tabela de Movimentações -->
+            <section class="container-tabela">
+                <div class="tabela-produtos">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th>Valor total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-movi-corpo">
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Painel Lateral Direito -->
+        <aside class="painel-detalhes" id="painel-detalhes">
+            <div class="painel-header">
+                <h3 id="painel-titulo">Informações</h3>
+                <button class="btn-fechar" id="btn-fechar-painel" aria-label="Fechar painel">&times;</button>
+            </div>
+
+            <div class="painel-body">
+
+                <!-- LAYOUT 1: VENDA (resumo + ver detalhes) -->
+                <div id="bloco-venda">
+                    <div class="card-info">
+                        <div class="info-grupo">
+                            <label>Cliente</label>
+                            <p id="info-cliente"></p>
+                        </div>
+                        <div class="info-grupo">
+                            <label>Data</label>
+                            <p id="info-data"></p>
+                        </div>
+                        <div class="info-grupo">
+                            <label>Valor</label>
+                            <p id="info-valor"></p>
+                        </div>
+                    </div>
+
+                    <div class="card-info">
+                        <label>Entrega</label>
+                        <p id="info-entrega"></p>
+                    </div>
+
+                    <button class="btn-detalhes" id="btn-ver-detalhes">Ver detalhes</button>
+                </div>
+
+                <!-- LAYOUT 2: ENTRADA / SAÍDA manual (data + descrição) -->
+                <div id="bloco-manual" class="escondido">
+                    <div class="card-info">
+                        <div class="info-grupo">
+                            <label>Data</label>
+                            <p id="info-manual-data"></p>
+                        </div>
+                        <div class="info-grupo">
+                            <label>Descrição</label>
+                            <p id="info-manual-descricao"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de itens (venda: aparece em "Ver detalhes" | entrada/saída: sempre) -->
+                <div id="bloco-itens" class="escondido">
+                    <div class="card-info tabela-itens-container">
+                        <label id="titulo-tabela-itens">Itens</label>
+                        <table class="tabela-resumo-itens">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Qtd</th>
+                                    <th class="col-valor-item">Valor total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpo-tabela-itens"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-info" id="box-valor-total-itens">
+                        <label>Valor total</label>
+                        <p id="info-valor-total-itens"></p>
+                    </div>
+                </div>
+
+                <!-- Observação (só vendas) -->
+                <div class="card-info card-observacao" id="card-observacao">
+                    <label>Observação</label>
+                    <p id="info-observacao"></p>
+                </div>
+            </div>
+
+            <div class="painel-footer">
+                <button class="btn-editar" id="btn-editar">Editar</button>
+                <button class="btn-excluir" id="btn-excluir">Excluir</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal: Nova / Editar movimentação -->
+    <div class="modal-fundo" id="modal-movi" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-movi-titulo">
+            <div class="modal-topo">
+                <h3 id="modal-movi-titulo">Nova Movimentação</h3>
+            </div>
+
+            <form id="form-movi" novalidate>
+                <div class="modal-corpo">
+
+                    <!-- Adicionar itens -->
+                    <section class="mv-secao">
+                        <div class="mv-secao-titulo">Adicionar itens</div>
+                        <div class="mv-secao-corpo">
+                            <div class="linha-item">
+                                <div class="campo">
+                                    <label for="item-produto">Produto</label>
+                                    <input type="text" id="item-produto" list="lista-produtos" autocomplete="off">
+                                </div>
+                                <div class="campo">
+                                    <label for="item-qtd">Quantidade</label>
+                                    <input type="number" id="item-qtd" min="1" step="1">
+                                </div>
+                                <button type="button" class="btn-add-item" id="btn-add-item">Adicionar</button>
+                            </div>
+                            <datalist id="lista-produtos"></datalist>
+                            <span class="dica" id="dica-preco"></span>
+                            <span class="erro" id="erro-item"></span>
+
+                            <div class="tabela-itens-modal">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Produto</th>
+                                            <th>Qtd</th>
+                                            <th>Preço un</th>
+                                            <th>Preço total</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="corpo-itens-modal"></tbody>
+                                </table>
+                            </div>
+                            <span class="erro" id="erro-itens"></span>
+                        </div>
+                    </section>
+
+                    <!-- Dados da movimentação -->
+                    <section class="mv-secao">
+                        <div class="mv-secao-titulo">Dados da movimentação</div>
+                        <div class="mv-secao-corpo grade-dados">
+                            <div class="campo">
+                                <label for="mov-tipo">Tipo:</label>
+                                <select id="mov-tipo">
+                                    <option value="">Selecione</option>
+                                    <option value="Entrada">Entrada</option>
+                                    <option value="Saída">Saída (insumo / perda)</option>
+                                </select>
+                                <span class="erro" id="erro-tipo"></span>
+                            </div>
+                            <div class="campo">
+                                <label for="mov-data">Data</label>
+                                <input type="date" id="mov-data">
+                                <span class="erro" id="erro-data"></span>
+                            </div>
+                            <div class="campo">
+                                <label for="mov-valor">Valor total (R$):</label>
+                                <input type="text" id="mov-valor" readonly value="R$ 0,00">
+                            </div>
+                            <div class="campo">
+                                <label for="mov-descricao" id="rotulo-descricao">Descrição</label>
+                                <input type="text" id="mov-descricao" maxlength="120" autocomplete="off">
+                                <span class="erro" id="erro-descricao"></span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="modal-rodape">
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-movi">Cancelar</button>
+                    <button type="submit" class="btn-salvar">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/menu.js"></script>
+    <script src="js/movimentacao.js"></script>
+</body>
+
+</html>

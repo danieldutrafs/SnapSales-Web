@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSales - Encomendas</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/encomendas.css">
+</head>
+
+<body>
+    <aside class="menu-esquerdo">
+        <h1>SnapSales</h1>
+        <nav>
+            <div class="menu-indicador" id="menu-indicador"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="encomendas.html" class="ativo">Encomendas</a></li>
+                <li><a href="produtos.html">Produtos</a></li>
+                <li><a href="clientes.html">Clientes</a></li>
+                <li><a href="movimentacao.html">Movimentação</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="conteudo">
+        <header>
+            <h2>Encomendas</h2>
+            <button class="btn-novo" id="btn-nova-encomenda">+ Nova Encomenda</button>
+        </header>
+
+        <section class="filtros">
+            <div id="container-filtros">
+                <div class="filtro-indicador" id="filtro-indicador"></div>
+                <button class="ativo" data-status="todos">Todos</button>
+                <button data-status="preparacao">Em preparação</button>
+                <button data-status="pronto">Prontos</button>
+                <button data-status="entregue">Entregues</button>
+            </div>
+        </section>
+
+        <section id="lista-encomendas" class="grid-cards"></section>
+    </main>
+
+    <!-- Painel de detalhes -->
+    <aside id="painel-direito">
+        <div class="painel-header">
+            <button id="btn-fechar">✕</button>
+        </div>
+
+        <div class="painel-card" id="card-cliente">
+            <h3>Código</h3>
+            <p class="subtexto" id="detalhe-codigo"></p>
+            <h3>Cliente</h3>
+            <p class="subtexto" id="detalhe-nome-cliente"></p>
+            <p class="subtexto" id="detalhe-telefone-cliente"></p>
+        </div>
+
+        <div class="painel-card" id="card-itens">
+            <h3>Itens</h3>
+            <ul id="detalhe-lista-itens"></ul>
+            <div class="card-divisor"></div>
+            <p class="total-destaque" id="detalhe-total-itens"></p>
+        </div>
+
+        <div class="painel-card" id="card-entrega">
+            <h3>Entrega</h3>
+            <p class="subtexto" id="detalhe-endereco"></p>
+            <p class="subtexto" id="detalhe-destinatario"></p>
+            <p class="subtexto" id="detalhe-data-hora"></p>
+        </div>
+
+        <div class="painel-card escondido" id="card-descricao">
+            <h3>Descrição</h3>
+            <p class="subtexto" id="detalhe-descricao"></p>
+        </div>
+
+        <div class="painel-card" id="card-pagamento">
+            <h3>Pagamento</h3>
+            <p class="subtexto" id="detalhe-frete"></p>
+            <p class="subtexto" id="detalhe-subtotal-itens"></p>
+            <p class="subtexto" id="detalhe-entrada"></p>
+            <div class="card-divisor"></div>
+            <p class="total-destaque" id="detalhe-a-pagar"></p>
+        </div>
+
+        <!-- Botões de status (só aparecem os que fazem sentido para o status atual) -->
+        <div class="painel-status">
+            <button type="button" class="btn-status pronto" id="btn-pronto" data-status="pronto">Marcar como pronto</button>
+            <button type="button" class="btn-status entregue" id="btn-entregue" data-status="entregue">Marcar como entregue</button>
+        </div>
+
+        <div class="painel-acoes">
+            <button id="btn-editar">Editar</button>
+            <button id="btn-excluir">Excluir</button>
+        </div>
+    </aside>
+
+    <!-- Tela: Nova encomenda (modal) -->
+    <div class="modal-fundo" id="modal-encomenda" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-enc-titulo">
+            <div class="modal-topo">
+                <h2 id="modal-enc-titulo">Nova Encomenda</h2>
+                <span class="badge-status preparacao" id="modal-enc-badge" title="Toda encomenda nova começa como Em preparo">Em preparo</span>
+            </div>
+
+            <form id="form-encomenda" novalidate>
+                <div class="modal-corpo">
+
+                    <!-- Cliente -->
+                    <div class="form-card">
+                        <h3>Cliente</h3>
+                        <div class="campo">
+                            <label for="enc-cliente">Selecionar cliente</label>
+                            <select id="enc-cliente"></select>
+                            <span class="erro" id="erro-cliente"></span>
+                        </div>
+                    </div>
+
+                    <!-- Itens -->
+                    <div class="form-card">
+                        <h3>Itens</h3>
+                        <div class="linha-item">
+                            <div class="campo">
+                                <label for="item-produto">Produto</label>
+                                <select id="item-produto"></select>
+                            </div>
+                            <div class="campo">
+                                <label for="item-qtd">Quantidade</label>
+                                <input type="number" id="item-qtd" min="1" step="1">
+                            </div>
+                            <button type="button" class="btn-add" id="btn-add-item">Adicionar</button>
+                        </div>
+                        <span class="erro" id="erro-item"></span>
+
+                        <div class="tabela-itens-modal">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Qtd</th>
+                                        <th>Valor total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="corpo-itens"></tbody>
+                            </table>
+                        </div>
+                        <span class="erro" id="erro-itens"></span>
+                        <div class="card-divisor"></div>
+                        <p class="total-destaque" id="total-itens-modal">Total: R$ 0,00</p>
+                    </div>
+
+                    <!-- Entrega -->
+                    <div class="form-card">
+                        <h3>Entrega</h3>
+
+                        <label class="check-linha" for="enc-retirada">
+                            <input type="checkbox" id="enc-retirada">
+                            Retirada no local
+                        </label>
+
+                        <div class="campo" id="campo-endereco">
+                            <label for="enc-endereco">Endereço</label>
+                            <input type="text" id="enc-endereco" maxlength="150" autocomplete="off">
+                            <span class="erro" id="erro-endereco"></span>
+                        </div>
+
+                        <div class="campo">
+                            <label for="enc-destinatario">Nome do destinatário</label>
+                            <input type="text" id="enc-destinatario" maxlength="80" autocomplete="off">
+                            <span class="erro" id="erro-destinatario"></span>
+                        </div>
+
+                        <div class="linha-2">
+                            <div class="campo">
+                                <label for="enc-data">Data da entrega</label>
+                                <input type="date" id="enc-data">
+                            </div>
+                            <div class="campo">
+                                <label for="enc-hora">Hora</label>
+                                <input type="time" id="enc-hora">
+                            </div>
+                        </div>
+                        <span class="erro" id="erro-data"></span>
+
+                        <div class="campo">
+                            <label for="enc-descricao">Descrição</label>
+                            <textarea id="enc-descricao" rows="3" maxlength="200"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Pagamento -->
+                    <div class="form-card">
+                        <h3>Pagamento</h3>
+                        <div class="linha-3">
+                            <div class="campo">
+                                <label for="enc-frete">Frete (R$)</label>
+                                <input type="number" id="enc-frete" min="0" step="0.01" placeholder="0,00">
+                                <span class="erro" id="erro-frete"></span>
+                            </div>
+                            <div class="campo">
+                                <label for="enc-entrada">Entrada (R$)</label>
+                                <input type="number" id="enc-entrada" min="0" step="0.01" placeholder="0,00">
+                                <span class="erro" id="erro-entrada"></span>
+                            </div>
+                            <div class="campo">
+                                <label for="enc-pagamento">Forma de pagamento</label>
+                                <select id="enc-pagamento">
+                                    <option>Pix</option>
+                                    <option>Dinheiro</option>
+                                    <option>Cartão</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-divisor"></div>
+                        <p class="subtexto" id="res-itens">Itens: R$ 0,00</p>
+                        <p class="subtexto" id="res-frete">Frete: R$ 0,00</p>
+                        <p class="subtexto" id="res-entrada">Entrada: R$ 0,00</p>
+                        <p class="total-destaque" id="res-apagar">A pagar: R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="modal-rodape">
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-enc">Cancelar</button>
+                    <button type="submit" class="btn-salvar">Salvar Encomenda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/menu.js"></script>
+    <script src="js/encomendas.js"></script>
+</body>
+
+</html>
