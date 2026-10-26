@@ -39,6 +39,11 @@ public class EncomendaFactory {
            }
        }
        
+       //Soma o frete somente quando for entrega (nao retirada)
+       if (!retirada && entrega != null) {
+           totalCalculo += entrega.getFrete();
+       }
+
        encomenda.setValorTotal(totalCalculo);
 
        //Vinculo bidirecional dos itens
