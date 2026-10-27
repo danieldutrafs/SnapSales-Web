@@ -1,11 +1,11 @@
 /* SnapSales - Home (resumo e próximas entregas) */
-$(function () {
+$(async function () {
 
     const esc = Dados.esc;
     const LIMITE_ESTOQUE_BAIXO = 10;
 
-    const encomendas = Dados.listarEncomendas();
-    const produtos = Dados.listarProdutos();
+    const encomendas = await Dados.listarEncomendas();
+    const produtos = await Dados.listarProdutos();
     const hoje = Dados.hojeISO();
 
     const abertas = encomendas.filter(e => e.status !== 'entregue');

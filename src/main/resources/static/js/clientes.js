@@ -8,8 +8,8 @@ $(function () {
     let emEdicaoId = null;      // null = novo cliente | número = editando
 
     /* ===================== TABELA ===================== */
-    function carregar() {
-        clientes = Dados.listarClientes();
+    async function carregar() {
+        clientes = await Dados.listarClientes();
         renderizarTabela();
     }
 
@@ -78,12 +78,12 @@ $(function () {
         if (c) abrirModal(c);
     });
 
-    $('#btn-excluir').on('click', function () {
+    $('#btn-excluir').on('click', async function () {
         const c = clienteSelecionado('Selecione um cliente para excluir.');
         if (!c) return;
         if (!confirm('Deseja realmente excluir este cliente?')) return;
 
-        Dados.excluirCliente(c.id);
+        await Dados.excluirCliente(c.id);
         selecionadoId = null;
         carregar();
     });
@@ -177,7 +177,7 @@ $(function () {
         return valido;
     }
 
-    $form.on('submit', function (e) {
+    $form.on('submit', async function (e) {
         e.preventDefault();
         if (!validar()) return;
 
@@ -188,7 +188,7 @@ $(function () {
         };
         if (emEdicaoId !== null) dados.id = emEdicaoId;
 
-        Dados.salvarCliente(dados);
+        await Dados.salvarCliente(dados);   // se o servidor recusar, mostra o erro e mantém o modal aberto
 
         fecharModal();
         $('.filtro-cliente input').val('');

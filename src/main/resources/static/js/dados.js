@@ -1,25 +1,16 @@
 /* ==========================================================================
-   SnapSales - dados.js   (FRONT-END / PROTÓTIPO)
+   SnapSales - dados.js   (comunicação com o back-end)
 
-   Dados de EXEMPLO fixos, só para as telas terem o que mostrar e poderem ser
-   testadas nesta etapa.
-     - NÃO salva nada: tudo fica na memória da página. Ao recarregar ou trocar
-       de tela, os dados voltam ao exemplo original.
-     - NÃO tem regras de negócio (estoque, saldo real, etc.).
+   Antes (protótipo): guardava dados de exemplo na memória da página.
+   Agora: cada função faz uma chamada fetch() aos Controllers do Spring
+   (rotas /api/...) e os dados vêm do banco.
 
-   Na etapa do back-end (Spring), as funções "listar...", "salvar...",
-   "excluir..." deste arquivo serão trocadas por chamadas fetch() aos
-   Controllers, e os dados virão do banco.
+   ATENÇÃO: as funções que falam com o servidor são ASSÍNCRONAS (devolvem
+   Promise). Nas telas elas são usadas com "await" dentro de try/catch;
+   se o servidor recusar algo (ex.: estoque insuficiente), a mensagem dele
+   chega aqui como Error e a tela mostra com alert(e.message).
    ========================================================================== */
 const Dados = (function () {
-
-    const CHAVES = {
-        clientes: 'clientes',
-        produtos: 'produtos',
-        categorias: 'categorias',
-        encomendas: 'encomendas',
-        movimentacoes: 'movimentacoes'
-    };
 
     const STATUS_TEXTO = {
         preparacao: 'Em preparação',
@@ -27,7 +18,7 @@ const Dados = (function () {
         entregue: 'Entregue'
     };
 
-    /* ---------- utilitários de exibição (ficam no front) ---------- */
+    /* ---------- utilitários de exibição (continuam no front) ---------- */
     const arredonda = n => Math.round(n * 100) / 100;
     const moeda = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const dataBR = iso => iso ? iso.split('-').reverse().join('/') : '';
@@ -46,290 +37,90 @@ const Dados = (function () {
         return d.toISOString().slice(0, 10);
     }
 
-    /* ---------- memória (só enquanto a página está aberta) ---------- */
-    const BANCO = {};
-    const copia = x => JSON.parse(JSON.stringify(x));
+    /* ---------- chamada HTTP ---------- */
+    async function http(metodo, url, corpo) {
+        const opcoes = { method: metodo, headers: { 'Accept': 'application/json' } };
+        if (corpo !== undefined) {
+            opcoes.headers['Content-Type'] = 'application/json';
+            opcoes.body = JSON.stringify(corpo);
+        }
 
-    function gravar(chave, valor) {
-        BANCO[chave] = copia(valor);
+        let resposta;
+        try {
+            resposta = await fetch(url, opcoes);
+        } catch (e) {
+            throw new Error('Não foi possível falar com o servidor. Ele está rodando?');
+        }
+
+        if (resposta.status === 204) return null;
+
+        let dados = null;
+        try { dados = await resposta.json(); } catch (e) { /* resposta sem corpo */ }
+
+        if (!resposta.ok) {
+            throw new Error((dados && dados.erro) || ('Erro ' + resposta.status + ' ao falar com o servidor.'));
+        }
+        return dados;
     }
 
-    // Na primeira leitura, usa os dados de exemplo
-    function ler(chave, semente) {
-        if (BANCO[chave] === undefined) BANCO[chave] = semente();
-        return copia(BANCO[chave]);
-    }
-
-    // No back-end quem faz isso é o banco (auto increment)
-    const proximoId = lista => lista.length ? Math.max(...lista.map(x => x.id)) + 1 : 1;
-    const codigoDe = id => String(id).padStart(4, '0');
-
     /* ======================================================================
-       DADOS DE EXEMPLO (primeira abertura)
+       CLIENTES   (GET/POST/PUT/DELETE /api/clientes)
        ====================================================================== */
-    const CAT = {
-        salgados: { id: 1, nome: 'Salgados' },
-        doces: { id: 2, nome: 'Doces' },
-        bebidas: { id: 3, nome: 'Bebidas' },
-        bolos: { id: 4, nome: 'Bolos e Tortas' }
-    };
-
-    const sementeCategorias = () => Object.values(CAT);
-
-    const sementeProdutos = () => [
-        { id: 1, codigo: '0001', nome: 'Coxinha de Frango', categoria: CAT.salgados, quantidade: 120, precoUni: 1.50, ativo: true },
-        { id: 2, codigo: '0002', nome: 'Pastel de Carne', categoria: CAT.salgados, quantidade: 80, precoUni: 2.00, ativo: true },
-        { id: 3, codigo: '0003', nome: 'Brigadeiro', categoria: CAT.doces, quantidade: 200, precoUni: 2.00, ativo: true },
-        { id: 4, codigo: '0004', nome: 'Beijinho', categoria: CAT.doces, quantidade: 150, precoUni: 2.00, ativo: true },
-        { id: 5, codigo: '0005', nome: 'Refrigerante Lata', categoria: CAT.bebidas, quantidade: 48, precoUni: 5.00, ativo: true },
-        { id: 6, codigo: '0006', nome: 'Suco Natural 500ml', categoria: CAT.bebidas, quantidade: 6, precoUni: 7.50, ativo: true },
-        { id: 7, codigo: '0007', nome: 'Bolo de Cenoura', categoria: CAT.bolos, quantidade: 10, precoUni: 40.00, ativo: true },
-        { id: 8, codigo: '0008', nome: 'Torta de Limão', categoria: CAT.bolos, quantidade: 4, precoUni: 55.00, ativo: false }
-    ];
-
-    const sementeClientes = () => [
-        { id: 1, codigo: '0001', nome: 'Maria Silva', telefone: '51 999991111', endereco: 'Rua das Flores, 120' },
-        { id: 2, codigo: '0002', nome: 'João Pereira', telefone: '51 988882222', endereco: 'Av. Brasil, 450' },
-        { id: 3, codigo: '0003', nome: 'Ana Souza', telefone: '51 977773333', endereco: 'Rua Central, 33' },
-        { id: 4, codigo: '0004', nome: 'Carlos Mendes', telefone: '51 966664444', endereco: 'Travessa do Sol, 78' },
-        { id: 5, codigo: '0005', nome: 'Fernanda Lima', telefone: '51 955555555', endereco: 'Rua XV de Novembro, 910' }
-    ];
-
-    const sementeEncomendas = () => [
-        {
-            id: 1, codigo: '0001', clienteId: 1, cliente: 'Maria Silva', telefone: '51 999991111',
-            itens: [
-                { produtoId: 1, produto: 'Coxinha de Frango', qtd: 50, preco: 1.50 },
-                { produtoId: 3, produto: 'Brigadeiro', qtd: 40, preco: 2.00 }
-            ],
-            retirada: false, endereco: 'Rua das Flores, 120', destinatario: 'Maria Silva',
-            dataEntrega: hojeISO(2), horaEntrega: '15:00', observacao: 'Festa de aniversário. Entregar no salão.',
-            pagamento: 'Pix', frete: 10, entrada: 50, status: 'preparacao', criadoEm: hojeISO()
-        },
-        {
-            id: 2, codigo: '0002', clienteId: 2, cliente: 'João Pereira', telefone: '51 988882222',
-            itens: [{ produtoId: 5, produto: 'Refrigerante Lata', qtd: 24, preco: 5.00 }],
-            retirada: true, endereco: '', destinatario: 'João Pereira',
-            dataEntrega: hojeISO(1), horaEntrega: '18:30', observacao: '',
-            pagamento: 'Dinheiro', frete: 0, entrada: 0, status: 'pronto', criadoEm: hojeISO(-1)
-        },
-        {
-            id: 3, codigo: '0003', clienteId: 3, cliente: 'Ana Souza', telefone: '51 977773333',
-            itens: [
-                { produtoId: 7, produto: 'Bolo de Cenoura', qtd: 2, preco: 40.00 },
-                { produtoId: 4, produto: 'Beijinho', qtd: 30, preco: 2.00 }
-            ],
-            retirada: false, endereco: 'Rua Central, 33', destinatario: 'Pedro Souza',
-            dataEntrega: hojeISO(-3), horaEntrega: '10:00', observacao: 'Sem coco no bolo.',
-            pagamento: 'Cartão', frete: 8, entrada: 0, status: 'entregue', criadoEm: hojeISO(-6)
-        },
-        {
-            id: 4, codigo: '0004', clienteId: 4, cliente: 'Carlos Mendes', telefone: '51 966664444',
-            itens: [{ produtoId: 2, produto: 'Pastel de Carne', qtd: 60, preco: 2.00 }],
-            retirada: false, endereco: 'Travessa do Sol, 78', destinatario: 'Carlos Mendes',
-            dataEntrega: hojeISO(5), horaEntrega: '12:00', observacao: 'Ligar ao chegar.',
-            pagamento: 'Pix', frete: 12, entrada: 60, status: 'preparacao', criadoEm: hojeISO()
-        },
-        {
-            id: 5, codigo: '0005', clienteId: 5, cliente: 'Fernanda Lima', telefone: '51 955555555',
-            itens: [
-                { produtoId: 6, produto: 'Suco Natural 500ml', qtd: 6, preco: 7.50 },
-                { produtoId: 1, produto: 'Coxinha de Frango', qtd: 30, preco: 1.50 }
-            ],
-            retirada: true, endereco: '', destinatario: 'Fernanda Lima',
-            dataEntrega: hojeISO(), horaEntrega: '17:00', observacao: '',
-            pagamento: 'Pix', frete: 0, entrada: 20, status: 'pronto', criadoEm: hojeISO(-2)
-        },
-        {
-            id: 6, codigo: '0006', clienteId: 1, cliente: 'Maria Silva', telefone: '51 999991111',
-            itens: [{ produtoId: 3, produto: 'Brigadeiro', qtd: 100, preco: 2.00 }],
-            retirada: false, endereco: 'Rua das Flores, 120', destinatario: 'Maria Silva',
-            dataEntrega: hojeISO(-10), horaEntrega: '09:00', observacao: '',
-            pagamento: 'Dinheiro', frete: 10, entrada: 0, status: 'entregue', criadoEm: hojeISO(-12)
-        }
-    ];
-
-    const sementeMovimentacoes = () => [
-        {
-            id: 1, tipo: 'Entrada', data: hojeISO(-4), descricao: 'Reposição de salgados',
-            itens: [
-                { produtoId: 1, produto: 'Coxinha de Frango', qtd: 100, preco: 1.50, total: 150 },
-                { produtoId: 2, produto: 'Pastel de Carne', qtd: 50, preco: 2.00, total: 100 }
-            ]
-        },
-        {
-            id: 2, tipo: 'Entrada', data: hojeISO(-8), descricao: 'Compra de bebidas',
-            itens: [{ produtoId: 5, produto: 'Refrigerante Lata', qtd: 48, preco: 5.00, total: 240 }]
-        },
-        {
-            id: 3, tipo: 'Saída', data: hojeISO(-1), descricao: 'Perda: produto vencido',
-            itens: [{ produtoId: 3, produto: 'Brigadeiro', qtd: 10, preco: 2.00, total: 20 }]
-        },
-        {
-            id: 4, tipo: 'Saída', data: hojeISO(), descricao: 'Degustação no balcão',
-            itens: [{ produtoId: 4, produto: 'Beijinho', qtd: 5, preco: 2.00, total: 10 }]
-        }
-    ];
-
-    /* ======================================================================
-       CLIENTES   (back-end: GET/POST/PUT/DELETE /clientes)
-       ====================================================================== */
-    const listarClientes = () => ler(CHAVES.clientes, sementeClientes);
+    const listarClientes = () => http('GET', '/api/clientes');
 
     // Sem dados.id = cria | com dados.id = atualiza
-    function salvarCliente(dados) {
-        const lista = listarClientes();
-        let cliente;
-        if (dados.id != null) {
-            cliente = lista.find(c => c.id === dados.id);
-            Object.assign(cliente, dados);
-        } else {
-            const id = proximoId(lista);
-            cliente = Object.assign({}, dados, { id: id, codigo: codigoDe(id) });
-            lista.push(cliente);
-        }
-        gravar(CHAVES.clientes, lista);
-        return cliente;
-    }
+    const salvarCliente = dados => dados.id != null
+        ? http('PUT', '/api/clientes/' + dados.id, dados)
+        : http('POST', '/api/clientes', dados);
 
-    function excluirCliente(id) {
-        gravar(CHAVES.clientes, listarClientes().filter(c => c.id !== id));
-    }
+    const excluirCliente = id => http('DELETE', '/api/clientes/' + id);
 
     /* ======================================================================
-       PRODUTOS E CATEGORIAS   (back-end: /produtos, /categorias)
+       PRODUTOS E CATEGORIAS   (/api/produtos, /api/categorias)
        ====================================================================== */
-    const listarProdutos = () => ler(CHAVES.produtos, sementeProdutos);
-    const listarCategorias = () => ler(CHAVES.categorias, sementeCategorias);
+    const listarProdutos = () => http('GET', '/api/produtos');
+    const listarCategorias = () => http('GET', '/api/categorias');
 
-    function salvarProduto(dados) {
-        const lista = listarProdutos();
-        let produto;
-        if (dados.id != null) {
-            produto = lista.find(p => p.id === dados.id);
-            Object.assign(produto, dados);
-        } else {
-            const id = proximoId(lista);
-            produto = Object.assign({ ativo: true }, dados, { id: id, codigo: codigoDe(id) });
-            lista.push(produto);
-        }
-        gravar(CHAVES.produtos, lista);
-        return produto;
-    }
+    const salvarProduto = dados => dados.id != null
+        ? http('PUT', '/api/produtos/' + dados.id, dados)
+        : http('POST', '/api/produtos', dados);
 
-    function alternarAtivoProduto(id) {
-        const lista = listarProdutos();
-        const p = lista.find(x => x.id === id);
-        if (p) { p.ativo = !p.ativo; gravar(CHAVES.produtos, lista); }
-    }
+    const alternarAtivoProduto = id => http('PATCH', '/api/produtos/' + id + '/ativo');
+    const excluirProduto = id => http('DELETE', '/api/produtos/' + id);
 
-    function excluirProduto(id) {
-        gravar(CHAVES.produtos, listarProdutos().filter(p => p.id !== id));
-    }
-
-    // Devolve a categoria com esse nome; se não existir, cria
-    function obterOuCriarCategoria(nome) {
-        const lista = listarCategorias();
-        let cat = lista.find(c => c.nome.toLowerCase() === nome.toLowerCase());
-        if (!cat) {
-            cat = { id: proximoId(lista), nome: nome };
-            lista.push(cat);
-            gravar(CHAVES.categorias, lista);
-        }
-        return cat;
-    }
+    // Devolve a categoria com esse nome; se não existir, o servidor cria
+    const obterOuCriarCategoria = nome => http('POST', '/api/categorias', { nome: nome });
 
     // Lista resumida usada nos formulários (encomenda e movimentação)
-    function catalogo() {
-        return listarProdutos().map(p => ({
+    async function catalogo() {
+        const produtos = await listarProdutos();
+        return produtos.map(p => ({
             id: p.id, nome: p.nome, preco: p.precoUni, quantidade: p.quantidade, ativo: p.ativo
         }));
     }
 
     /* ======================================================================
-       MOVIMENTAÇÕES MANUAIS (entradas e saídas)   (back-end: /movimentacoes)
+       MOVIMENTAÇÕES MANUAIS (entradas e saídas)   (/api/movimentacoes)
        ====================================================================== */
-    const listarMovimentacoesManuais = () => ler(CHAVES.movimentacoes, sementeMovimentacoes);
+    const listarMovimentacoesManuais = () => http('GET', '/api/movimentacoes');
 
-    function salvarMovimentacao(dados) {
-        const lista = listarMovimentacoesManuais();
-        let mov;
-        if (dados.id != null) {
-            mov = lista.find(m => m.id === dados.id);
-            Object.assign(mov, dados);
-        } else {
-            mov = Object.assign({}, dados, { id: proximoId(lista) });
-            lista.push(mov);
-        }
-        gravar(CHAVES.movimentacoes, lista);
-        return mov;
-    }
+    const salvarMovimentacao = dados => dados.id != null
+        ? http('PUT', '/api/movimentacoes/' + dados.id, dados)
+        : http('POST', '/api/movimentacoes', dados);
 
-    function excluirMovimentacao(id) {
-        gravar(CHAVES.movimentacoes, listarMovimentacoesManuais().filter(m => m.id !== id));
-    }
+    const excluirMovimentacao = id => http('DELETE', '/api/movimentacoes/' + id);
 
     /* ======================================================================
-       ENCOMENDAS   (back-end: /encomendas)
+       ENCOMENDAS   (/api/encomendas)
        ====================================================================== */
-    const lerEncomendas = () => ler(CHAVES.encomendas, sementeEncomendas);
+    const listarEncomendas = () => http('GET', '/api/encomendas');
+    const buscarEncomenda = id => http('GET', '/api/encomendas/' + id);
+    const adicionarEncomenda = dados => http('POST', '/api/encomendas', dados);
+    const atualizarEncomenda = (id, dados) => http('PUT', '/api/encomendas/' + id, dados);
+    const excluirEncomenda = id => http('DELETE', '/api/encomendas/' + id);
+    const alterarStatus = (id, status) => http('PATCH', '/api/encomendas/' + id + '/status', { status: status });
 
-    const limparItens = itens => itens.map(i => ({
-        produtoId: i.produtoId, produto: i.produto, qtd: i.qtd, preco: i.preco
-    }));
-
-    function listarEncomendas() {
-        return lerEncomendas().slice().sort((a, b) => b.id - a.id);
-    }
-
-    function buscarEncomenda(id) {
-        return lerEncomendas().find(e => e.id === id) || null;
-    }
-
-    // Toda encomenda nova começa "em preparação"
-    function adicionarEncomenda(dados) {
-        const lista = lerEncomendas();
-        const id = proximoId(lista);
-        const nova = Object.assign({}, dados, {
-            id: id,
-            codigo: codigoDe(id),
-            itens: limparItens(dados.itens),
-            status: 'preparacao',
-            criadoEm: hojeISO()
-        });
-        lista.push(nova);
-        gravar(CHAVES.encomendas, lista);
-        return nova;
-    }
-
-    function atualizarEncomenda(id, dados) {
-        const lista = lerEncomendas();
-        const idx = lista.findIndex(e => e.id === id);
-        const antiga = lista[idx];
-        lista[idx] = Object.assign({}, antiga, dados, {
-            id: antiga.id,
-            codigo: antiga.codigo,
-            itens: limparItens(dados.itens),
-            status: antiga.status,
-            criadoEm: antiga.criadoEm
-        });
-        gravar(CHAVES.encomendas, lista);
-        return lista[idx];
-    }
-
-    function excluirEncomenda(id) {
-        gravar(CHAVES.encomendas, lerEncomendas().filter(e => e.id !== id));
-    }
-
-    function alterarStatus(id, status) {
-        const lista = lerEncomendas();
-        const enc = lista.find(e => e.id === id);
-        if (!enc || !STATUS_TEXTO[status]) return;
-        enc.status = status;
-        gravar(CHAVES.encomendas, lista);
-    }
-
-    // Monta os textos que a tela de encomendas exibe
+    // Monta os textos que a tela de encomendas exibe (só formatação, não chama o servidor)
     function formatarEncomenda(e) {
         const sub = arredonda(somaItens(e.itens));
         const frete = e.frete || 0;
@@ -359,8 +150,8 @@ const Dados = (function () {
     }
 
     // Cada encomenda aparece como "Venda" na tela de Movimentação
-    function listarVendas() {
-        return lerEncomendas().map(e => ({
+    function vendasDasEncomendas(encomendas) {
+        return encomendas.map(e => ({
             id: 'v' + e.id,
             tipo: 'Venda',
             data: e.criadoEm || e.dataEntrega,
@@ -382,18 +173,22 @@ const Dados = (function () {
         }));
     }
 
+    const listarVendas = async () => vendasDasEncomendas(await listarEncomendas());
+
     /* ---------- API pública ---------- */
-    const api = {
+    return {
         esc, moeda, dataBR, hojeISO, STATUS_TEXTO,
         listarClientes, salvarCliente, excluirCliente,
         listarProdutos, salvarProduto, alternarAtivoProduto, excluirProduto,
-        listarCategorias, obterOuCriarCategoria,
+        listarCategorias, obterOuCriarCategoria, catalogo,
         listarMovimentacoesManuais, salvarMovimentacao, excluirMovimentacao,
         listarEncomendas, buscarEncomenda, adicionarEncomenda, atualizarEncomenda,
         excluirEncomenda, alterarStatus, formatarEncomenda, listarVendas
     };
-
-    Object.defineProperty(api, 'catalogo', { get: catalogo });
-
-    return api;
 })();
+
+// Qualquer erro vindo do servidor que não foi tratado numa tela aparece como aviso para a pessoa
+window.addEventListener('unhandledrejection', function (evento) {
+    evento.preventDefault();
+    alert((evento.reason && evento.reason.message) || 'Ocorreu um erro inesperado.');
+});

@@ -19,44 +19,50 @@ $(function () {
     let itemEmEdicao = null;      // índice do item sendo editado
 
     // Manuais + vendas (que vêm das encomendas)
-    const todas = () => manuais.concat(Dados.listarVendas());
+    let vendas = [];              // vendas geradas pelas encomendas (vêm do servidor)
+    let catalogo = [];            // produtos (com estoque) vindos do servidor
+    const todas = () => manuais.concat(vendas);
 
-    function carregar() {
-        manuais = Dados.listarMovimentacoesManuais();
+    async function carregar() {
+        manuais = await Dados.listarMovimentacoesManuais();
+        vendas = await Dados.listarVendas();
+        catalogo = await Dados.catalogo();
+        preencherListaProdutos();
         atualizarCards();
         renderizarTabela();
     }
 
     function buscarProduto(nome) {
         const n = nome.trim().toLowerCase();
-        return Dados.catalogo.find(p => p.nome.toLowerCase() === n);
+        return catalogo.find(p => p.nome.toLowerCase() === n);
     }
 
     /* ===================== CARDS ===================== */
     // Verde    = total em vendas
     // Vermelho = perdas e insumos (saídas) do mês atual
-    // Azul     = saldo atual (entradas - saídas). Vendas não entram.
+    // Azul     = saldo atual = VALOR DO ESTOQUE (quantidade x preço de todos os produtos).
+    //            Sobe com entradas e desce com encomendas e saídas, porque o servidor já
+    //            atualiza a quantidade de cada produto.
     function atualizarCards() {
         const mesAtual = hojeISO().slice(0, 7);
         const doMes = m => String(m.data).slice(0, 7) === mesAtual;
 
-        let vendas = 0, perdasMes = 0, entradas = 0, saidas = 0;
+        let vendasTotal = 0, perdasMes = 0;
 
         todas().forEach(m => {
             const v = valorMov(m);
             if (m.tipo === 'Saída') {
-                saidas += v;
                 if (doMes(m)) perdasMes += v;
             } else if (m.tipo === 'Venda') {
-                if (!VENDAS_SOMENTE_DO_MES || doMes(m)) vendas += v;
-            } else {
-                entradas += v;
+                if (!VENDAS_SOMENTE_DO_MES || doMes(m)) vendasTotal += v;
             }
         });
 
-        $('#entrada').text(moeda(vendas));
+        const valorEstoque = catalogo.reduce((soma, p) => soma + p.quantidade * p.preco, 0);
+
+        $('#entrada').text(moeda(vendasTotal));
         $('#saida').text(moeda(perdasMes));
-        $('#saldo-atual').text(moeda(entradas - saidas));
+        $('#saldo-atual').text(moeda(valorEstoque));
     }
 
     /* ===================== TABELA ===================== */
@@ -168,7 +174,7 @@ $(function () {
         abrirModal(m);
     });
 
-    $('#btn-excluir').on('click', function () {
+    $('#btn-excluir').on('click', async function () {
         const m = todas().find(x => x.id === movSelecionadaId);
         if (!m) return;
         if (m.tipo === 'Venda') {
@@ -177,7 +183,7 @@ $(function () {
         }
         if (!confirm('Deseja realmente excluir esta movimentação?')) return;
 
-        Dados.excluirMovimentacao(m.id);
+        await Dados.excluirMovimentacao(m.id);
         fecharPainel();
         carregar();
     });
@@ -185,7 +191,10 @@ $(function () {
     /* ===================== MODAL NOVA / EDITAR ===================== */
     const $modal = $('#modal-movi');
 
-    Dados.catalogo.forEach(p => $('#lista-produtos').append(`<option value="${esc(p.nome)}"></option>`));
+    function preencherListaProdutos() {
+        $('#lista-produtos').empty();
+        catalogo.forEach(p => $('#lista-produtos').append(`<option value="${esc(p.nome)}"></option>`));
+    }
 
     function limparErros() {
         $modal.find('.erro').text('');
@@ -348,7 +357,7 @@ $(function () {
     });
 
     /* ----- validação e salvar ----- */
-    $('#form-movi').on('submit', function (e) {
+    $('#form-movi').on('submit', async function (e) {
         e.preventDefault();
         limparErros();
         let valido = true;
@@ -369,11 +378,11 @@ $(function () {
         const dados = { tipo: tipo, data: data, descricao: descricao, itens: itensModal.map(i => ({ ...i })) };
         if (movEmEdicaoId !== null) dados.id = movEmEdicaoId;
 
-        const salva = Dados.salvarMovimentacao(dados);
+        const salva = await Dados.salvarMovimentacao(dados);
 
         const idAberto = movSelecionadaId;
         fecharModal();
-        carregar();
+        await carregar();
 
         // Se o painel estava aberto na movimentação editada, atualiza
         if (idAberto === salva.id) abrirPainel(salva);

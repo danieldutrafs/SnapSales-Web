@@ -9,8 +9,8 @@ $(function () {
     let selecionadoId = null;
 
     /* ===================== TELA ===================== */
-    function carregar() {
-        produtos = Dados.listarProdutos();
+    async function carregar() {
+        produtos = await Dados.listarProdutos();
         atualizarTela();
     }
 
@@ -87,36 +87,36 @@ $(function () {
     }
 
     /* ===================== PAUSAR / EXCLUIR ===================== */
-    $('#btn-pausar').on('click', function () {
+    $('#btn-pausar').on('click', async function () {
         const p = produtoSelecionado('Selecione um produto na tabela primeiro.');
         if (!p) return;
-        Dados.alternarAtivoProduto(p.id);
+        await Dados.alternarAtivoProduto(p.id);
         carregar();
     });
 
-    $('#btn-excluir').on('click', function () {
+    $('#btn-excluir').on('click', async function () {
         const p = produtoSelecionado('Selecione um produto na tabela primeiro.');
         if (!p) return;
         if (!confirm('Deseja realmente excluir este produto?')) return;
 
-        Dados.excluirProduto(p.id);
+        await Dados.excluirProduto(p.id);
         selecionadoId = null;
         carregar();
     });
 
     /* ===================== MODAL ===================== */
-    function carregarSelectCategorias() {
+    async function carregarSelectCategorias() {
         const $select = $('#campo-categoria-produto').empty();
         $select.append('<option value="">Selecione uma categoria...</option>');
-        Dados.listarCategorias().forEach(c => $select.append(`<option value="${c.id}">${esc(c.nome)}</option>`));
+        (await Dados.listarCategorias()).forEach(c => $select.append(`<option value="${c.id}">${esc(c.nome)}</option>`));
         $select.append('<option value="__NOVA__">+ Adicionar Nova Categoria...</option>');
     }
 
-    function abrirModal(titulo, produto) {
+    async function abrirModal(titulo, produto) {
         $('#modal-titulo-produto').text(titulo);
         $('#formulario-produto')[0].reset();
         $('#grupo-nova-categoria').addClass('oculto');
-        carregarSelectCategorias();
+        await carregarSelectCategorias();
 
         if (produto) {
             $('#campo-id-produto').val(produto.id);
@@ -155,7 +155,7 @@ $(function () {
     });
 
     /* ===================== VALIDAÇÃO E SALVAR ===================== */
-    $('#formulario-produto').on('submit', function (e) {
+    $('#formulario-produto').on('submit', async function (e) {
         e.preventDefault();
 
         const idProduto = $('#campo-id-produto').val();
@@ -176,13 +176,13 @@ $(function () {
         if (duplicado) { alert('Já existe um produto com esse nome.'); return; }
 
         const categoria = valCategoria === '__NOVA__'
-            ? Dados.obterOuCriarCategoria(nomeNovaCategoria)
-            : Dados.listarCategorias().find(c => c.id === parseInt(valCategoria, 10));
+            ? await Dados.obterOuCriarCategoria(nomeNovaCategoria)
+            : { id: parseInt(valCategoria, 10) };
 
         const dados = { nome: nome, categoria: categoria, precoUni: precoUni, quantidade: quantidade };
         if (idProduto) dados.id = parseInt(idProduto, 10);
 
-        Dados.salvarProduto(dados);
+        await Dados.salvarProduto(dados);
 
         fecharModal();
         carregar();

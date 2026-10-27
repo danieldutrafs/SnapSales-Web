@@ -9,8 +9,8 @@ $(function () {
     let filtroAtual = 'todos';
     let idPainel = null;   // encomenda aberta no painel direito
 
-    function carregarEncomendas() {
-        encomendas = Dados.listarEncomendas().map(Dados.formatarEncomenda);
+    async function carregarEncomendas() {
+        encomendas = (await Dados.listarEncomendas()).map(Dados.formatarEncomenda);
     }
 
     /* ===================== CARDS ===================== */
@@ -122,34 +122,34 @@ $(function () {
         $('.conteudo').removeClass('painel-aberto');
     }
 
-    function atualizarLista() {
-        carregarEncomendas();
+    async function atualizarLista() {
+        await carregarEncomendas();
         aplicarFiltro();
     }
 
     $(document).on('click', '.btn-detalhes', function () { abrirPainel($(this).data('id')); });
     $('#btn-fechar').on('click', fecharPainel);
 
-    $('#btn-pronto, #btn-entregue').on('click', function () {
+    $('#btn-pronto, #btn-entregue').on('click', async function () {
         const novoStatus = $(this).data('status');
         if (novoStatus === 'entregue' &&
             !confirm('Marcar como entregue? Depois disso a encomenda não poderá mais ser editada.')) return;
 
-        Dados.alterarStatus(idPainel, novoStatus);
-        atualizarLista();
+        await Dados.alterarStatus(idPainel, novoStatus);
+        await atualizarLista();
         abrirPainel(idPainel);
     });
 
-    $('#btn-excluir').on('click', function () {
+    $('#btn-excluir').on('click', async function () {
         if (!idPainel || !confirm('Deseja realmente excluir esta encomenda?')) return;
 
-        Dados.excluirEncomenda(idPainel);
+        await Dados.excluirEncomenda(idPainel);
         fecharPainel();
-        atualizarLista();
+        await atualizarLista();
     });
 
-    $('#btn-editar').on('click', function () {
-        const enc = Dados.buscarEncomenda(idPainel);
+    $('#btn-editar').on('click', async function () {
+        const enc = await Dados.buscarEncomenda(idPainel);
         if (!enc) return;
         if (enc.status === 'entregue') {
             alert('Encomendas entregues não podem ser editadas.');
@@ -161,6 +161,7 @@ $(function () {
     /* ===================== MODAL: NOVA / EDITAR ===================== */
     const $modal = $('#modal-encomenda');
     let clientes = [];
+    let catalogo = [];         // produtos (com estoque) vindos do servidor
     let itens = [];            // { produtoId, produto, qtd, preco, total }
     let encEmEdicao = null;    // null = nova | objeto = editando
 
@@ -199,8 +200,8 @@ $(function () {
         return disp;
     }
 
-    function carregarClientes() {
-        clientes = Dados.listarClientes();
+    async function carregarClientes() {
+        clientes = await Dados.listarClientes();
         const $select = $('#enc-cliente').empty().append('<option value="">Selecione o cliente</option>');
         clientes.forEach(c => $select.append(`<option value="${c.id}">${esc(c.codigo + ' - ' + c.nome)}</option>`));
     }
@@ -209,7 +210,7 @@ $(function () {
     function carregarProdutos() {
         const $select = $('#item-produto');
         const atual = $select.val();
-        const disponiveis = Dados.catalogo.filter(p => p.ativo && estoqueDisponivel(p) > 0);
+        const disponiveis = catalogo.filter(p => p.ativo && estoqueDisponivel(p) > 0);
 
         $select.empty().append(`<option value="">${disponiveis.length ? 'Selecione o produto' : 'Nenhum produto com estoque'}</option>`);
         disponiveis.forEach(p => {
@@ -252,7 +253,7 @@ $(function () {
         $('#res-apagar').text('A pagar: ' + moeda(Math.max(arredonda(sub + frete - entrada), 0)));
     }
 
-    function abrirModal(enc) {
+    async function abrirModal(enc) {
         limparErros();
         encEmEdicao = enc || null;
         itens = enc
@@ -262,7 +263,15 @@ $(function () {
             }))
             : [];
 
-        carregarClientes();
+        await carregarClientes();
+        catalogo = await Dados.catalogo();
+        // Ao editar, o estoque do servidor já descontou os itens desta encomenda: soma de volta
+        if (enc) {
+            enc.itens.forEach(i => {
+                const p = catalogo.find(x => x.id === i.produtoId);
+                if (p) p.quantidade += i.qtd;
+            });
+        }
         $('#form-encomenda')[0].reset();
         $('#modal-enc-titulo').text(enc ? 'Editar Encomenda' : 'Nova Encomenda');
 
@@ -331,7 +340,7 @@ $(function () {
     /* ----- itens da encomenda ----- */
     function adicionarItem() {
         $('#erro-item').text('');
-        const produto = Dados.catalogo.find(p => String(p.id) === $('#item-produto').val());
+        const produto = catalogo.find(p => String(p.id) === $('#item-produto').val());
         const qtd = Number($('#item-qtd').val());
 
         if (!produto) { $('#erro-item').text('Selecione um produto.'); return; }
@@ -379,7 +388,7 @@ $(function () {
     });
 
     /* ----- validação e salvar ----- */
-    $('#form-encomenda').on('submit', function (e) {
+    $('#form-encomenda').on('submit', async function (e) {
         e.preventDefault();
         limparErros();
         let valido = true;
@@ -442,11 +451,11 @@ $(function () {
         };
 
         const editando = encEmEdicao;
-        if (editando) Dados.atualizarEncomenda(editando.id, dados);
-        else Dados.adicionarEncomenda(dados);
+        if (editando) await Dados.atualizarEncomenda(editando.id, dados);
+        else await Dados.adicionarEncomenda(dados);
 
         fecharModal();
-        atualizarLista();
+        await atualizarLista();
 
         if (editando) {
             abrirPainel(editando.id);
